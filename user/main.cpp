@@ -22,6 +22,7 @@ static int randomHatId{};
 static int randomPetId{};
 static int randomColorId{};
 
+static PlayerControl* LocalPlayer;
 
 void dPlayerControl_FixedUpdate(PlayerControl* __this, MethodInfo* method)
 {
@@ -45,6 +46,15 @@ void dPlayerControl_FixedUpdate(PlayerControl* __this, MethodInfo* method)
     //    }
     //}
 
+    //判斷是不是自己
+    //if(__this == LocalPlayer)
+    //{
+    //    if (GetAsyncKeyState(VK_NUMPAD3) & 1)
+    //        PlayerControl_RpcSetScanner(__this, 1, method);
+    //    if (GetAsyncKeyState(VK_NUMPAD4) & 1)
+    //        PlayerControl_RpcSetScanner(__this, 0, method);
+    //}
+
     return PlayerControl_FixedUpdate(__this, method);
 }
 
@@ -56,6 +66,13 @@ void dShipStatus_RpcEndGame(AmongUsClient* __this, MethodInfo* method)
 void dInnerNetServer_EndGame(InnerNetServer* __this, MessageReader* message, InnerNetServer_Player* source, MethodInfo* method)
 {
     std::cout << "dInnerNetServer_EndGame Not End" << std::endl;
+}
+
+void dGameStartManager_BeginGame(GameStartManager* __this, MethodInfo* method)
+{
+    std::cout << "Hook BeginGame to Call ReallyBegin" << std::endl;
+
+    return GameStartManager_ReallyBegin(__this, 1, method);
 }
 
 void dGameStartManager_Update(GameStartManager* __this, MethodInfo* method)
@@ -109,28 +126,47 @@ void Run(HMODULE hModule)
     DetourTransactionBegin();
     DetourUpdateThread(GetCurrentThread());
     //Hook
-    HOOKFUNC(PlayerControl_FixedUpdate);
-    HOOKFUNC(LightSource_Update);
+    //HOOKFUNC(PlayerControl_FixedUpdate);
+    //HOOKFUNC(LightSource_Update);
     HOOKFUNC(ShipStatus_CalculateLightRadius);
-    HOOKFUNC(GameStartManager_Update);
-    HOOKFUNC(ShipStatus_RpcEndGame);
+    //HOOKFUNC(GameStartManager_Update);
+    //HOOKFUNC(ShipStatus_RpcEndGame);
+    //HOOKFUNC(GameStartManager_BeginGame);
+    
     //HOOKFUNC(InnerNetServer_EndGame);
     
     DetourTransactionCommit();
 
     while (!GetAsyncKeyState(VK_END))
     {
+        if (il2cppi_is_initialized(StatsManager__TypeInfo))
+        {
+            auto StatsManager = (*StatsManager__TypeInfo)->static_fields->Instance;
+            StatsManager->fields.banPoints = 0;
+        }
+
+        if (il2cppi_is_initialized(PlayerControl__TypeInfo))
+        {
+            LocalPlayer = (*PlayerControl__TypeInfo)->static_fields->LocalPlayer;
+
+            if(GetAsyncKeyState(VK_NUMPAD1) & 1)
+                LocalPlayer->fields.moveable = 1;
+            if (GetAsyncKeyState(VK_NUMPAD2) & 1)
+                LocalPlayer->fields.moveable = 0;
+
+        }
         Sleep(20);
     }
 
     DetourTransactionBegin();
     DetourUpdateThread(GetCurrentThread());
     //UnHook
-    UNHOOKFUNC(PlayerControl_FixedUpdate);
-    UNHOOKFUNC(LightSource_Update);
+    //UNHOOKFUNC(PlayerControl_FixedUpdate);
+    //UNHOOKFUNC(LightSource_Update);
     UNHOOKFUNC(ShipStatus_CalculateLightRadius);
-    UNHOOKFUNC(GameStartManager_Update);
-    UNHOOKFUNC(ShipStatus_RpcEndGame);
+    //UNHOOKFUNC(GameStartManager_Update);
+    //UNHOOKFUNC(ShipStatus_RpcEndGame);
+    //UNHOOKFUNC(GameStartManager_BeginGame);
     //UNHOOKFUNC(InnerNetServer_EndGame);
 
     DetourTransactionCommit();
