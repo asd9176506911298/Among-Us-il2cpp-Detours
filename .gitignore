@@ -36,3 +36,5 @@ Release
 Debug
 x64
 X64
+
+!include/detours.lib
