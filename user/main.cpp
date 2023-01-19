@@ -23,40 +23,67 @@ static int randomPetId{};
 static int randomColorId{};
 
 
-void dPlayerControl_FixedUpdate(PlayerControl* _this, MethodInfo* method)
+void dPlayerControl_FixedUpdate(PlayerControl* __this, MethodInfo* method)
 {
     //std::cout << "Hooked" << std::endl;
-    randomSkinId = rand() % 15;
-    randomHatId = rand() % 93;
-    randomPetId = rand() % 10;
-    randomColorId = rand() % 12;
+    //randomSkinId = rand() % 15;
+    //randomHatId = rand() % 93;
+    //randomPetId = rand() % 10;
+    //randomColorId = rand() % 12;
 
-    PlayerControl_RpcSetSkin(_this, randomSkinId, method);
-    PlayerControl_RpcSetHat(_this, randomHatId, method);
-    PlayerControl_RpcSetPet(_this, randomPetId, method);
-    PlayerControl_RpcSetColor(_this, randomColorId, method);
+    //PlayerControl_RpcSetSkin(_this, randomSkinId, method);
+    //PlayerControl_RpcSetHat(_this, randomHatId, method);
+    //PlayerControl_RpcSetPet(_this, randomPetId, method);
+    //PlayerControl_RpcSetColor(_this, randomColorId, method);
 
-    //std::string s = "Yuki";
-    //app::PlayerControl_RpcSendChat(_this, convert_to_string(s), method);
+    //if (GetAsyncKeyState(VK_NUMPAD3) & 1)
+    //{
+    //    for (int i = 1; i <= 20; i++)
+    //    {
+    //        std::string s = std::to_string(i);
+    //        app::PlayerControl_RpcSendChat(__this, convert_to_string(s), method);
+    //    }
+    //}
 
-    return PlayerControl_FixedUpdate(_this, method);
+    return PlayerControl_FixedUpdate(__this, method);
 }
 
-float dShipStatus_CalculateLightRadius(ShipStatus* _this, MethodInfo* method)
+void dShipStatus_RpcEndGame(AmongUsClient* __this, MethodInfo* method)
+{
+    std::cout << "ShipStatus_RpcEndGame Not End" << std::endl;
+}
+
+void dInnerNetServer_EndGame(InnerNetServer* __this, MessageReader* message, InnerNetServer_Player* source, MethodInfo* method)
+{
+    std::cout << "dInnerNetServer_EndGame Not End" << std::endl;
+}
+
+void dGameStartManager_Update(GameStartManager* __this, MethodInfo* method)
+{
+    //std::cout << "GameStartManager" << std::endl;
+
+    if(GetAsyncKeyState(VK_NUMPAD2) & 1)
+    {
+        GameStartManager_ReallyBegin(__this, 1, method);
+        std::cout << "GameStartManager_ReallyBegin Called" << std::endl;
+    }
+
+    return GameStartManager_Update(__this, method);
+}
+
+float dShipStatus_CalculateLightRadius(ShipStatus* __this, MethodInfo* method)
 {
     //std::cout << "ShipStatus" << std::endl;
     return 10.f;
-    //return ShipStatus_CalculateLightRadius(_this, method);
+    //return ShipStatus_CalculateLightRadius(__this, method);
 }
 
-
-
-void dLightSource_Update(LightSource* _this, MethodInfo* method)
+void dLightSource_Update(LightSource* __this, MethodInfo* method)
 {
     //std::cout << "Light" << std::endl;
   
 
-    return LightSource_Update(_this, method);
+    return LightSource_Update(__this, method);
 }
 
 
@@ -74,9 +101,9 @@ void Run(HMODULE hModule)
 
     // If you would like to output to a new console window, use il2cppi_new_console() to open one and redirect stdout
     // il2cppi_new_console();
-    //AllocConsole();
-    //FILE* f;
-    //freopen_s(&f, "CONOUT$", "w", stdout);
+    AllocConsole();
+    FILE* f;
+    freopen_s(&f, "CONOUT$", "w", stdout);
     // Place your custom code here
 
     DetourTransactionBegin();
@@ -85,7 +112,10 @@ void Run(HMODULE hModule)
     HOOKFUNC(PlayerControl_FixedUpdate);
     HOOKFUNC(LightSource_Update);
     HOOKFUNC(ShipStatus_CalculateLightRadius);
-
+    HOOKFUNC(GameStartManager_Update);
+    HOOKFUNC(ShipStatus_RpcEndGame);
+    //HOOKFUNC(InnerNetServer_EndGame);
+    
     DetourTransactionCommit();
 
     while (!GetAsyncKeyState(VK_END))
@@ -99,11 +129,13 @@ void Run(HMODULE hModule)
     UNHOOKFUNC(PlayerControl_FixedUpdate);
     UNHOOKFUNC(LightSource_Update);
     UNHOOKFUNC(ShipStatus_CalculateLightRadius);
-
+    UNHOOKFUNC(GameStartManager_Update);
+    UNHOOKFUNC(ShipStatus_RpcEndGame);
+    //UNHOOKFUNC(InnerNetServer_EndGame);
 
     DetourTransactionCommit();
 
-    //fclose(f);
-    //FreeConsole();
+    fclose(f);
+    FreeConsole();
     FreeLibraryAndExitThread(hModule, 0);
 }
